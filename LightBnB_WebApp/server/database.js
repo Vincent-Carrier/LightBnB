@@ -31,8 +31,10 @@ exports.getUserWithEmail = getUserWithEmail;
  * @param {string} id The id of the user.
  * @return {Promise<{}>} A promise to the user.
  */
-const getUserWithId = function(id) {
-  return Promise.resolve(users[id]);
+const getUserWithId = async function(id) {
+  return client.query(SQL`
+    SELECT * FROM users WHERE id = ${id};
+  `).then(res => res.rows[0]);
 };
 exports.getUserWithId = getUserWithId;
 
@@ -43,10 +45,10 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser =  function(user) {
-  const userId = Object.keys(users).length + 1;
-  user.id = userId;
-  users[userId] = user;
-  return Promise.resolve(user);
+  client.query(SQL`
+    INSERT INTO users (name, email, password) VALUES
+    (${user.name}, ${user.email}, ${user.password});
+  `)
 };
 exports.addUser = addUser;
 
