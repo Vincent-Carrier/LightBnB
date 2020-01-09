@@ -1,5 +1,16 @@
 const properties = require('./json/properties.json');
 const users = require('./json/users.json');
+const { Client } = require('pg');
+const {SQL} = require('sql-template-strings');
+
+const client = new Client({
+  user: 'vincent',
+  password: '',
+  host: 'localhost',
+  database: 'lightbnb'
+});
+
+client.connect();
 
 /// Users
 
@@ -8,18 +19,11 @@ const users = require('./json/users.json');
  * @param {String} email The email of the user.
  * @return {Promise<{}>} A promise to the user.
  */
-const getUserWithEmail = function(email) {
-  let user;
-  for (const userId in users) {
-    user = users[userId];
-    if (user.email.toLowerCase() === email.toLowerCase()) {
-      break;
-    } else {
-      user = null;
-    }
-  }
-  return Promise.resolve(user);
-}
+const getUserWithEmail = async function(email) {
+  return client.query(SQL`
+    SELECT * FROM users WHERE email = ${email};
+  `).then(res => res.rows[0]);
+};
 exports.getUserWithEmail = getUserWithEmail;
 
 /**
@@ -29,7 +33,7 @@ exports.getUserWithEmail = getUserWithEmail;
  */
 const getUserWithId = function(id) {
   return Promise.resolve(users[id]);
-}
+};
 exports.getUserWithId = getUserWithId;
 
 
@@ -43,7 +47,7 @@ const addUser =  function(user) {
   user.id = userId;
   users[userId] = user;
   return Promise.resolve(user);
-}
+};
 exports.addUser = addUser;
 
 /// Reservations
@@ -55,7 +59,7 @@ exports.addUser = addUser;
  */
 const getAllReservations = function(guest_id, limit = 10) {
   return getAllProperties(null, 2);
-}
+};
 exports.getAllReservations = getAllReservations;
 
 /// Properties
@@ -66,13 +70,11 @@ exports.getAllReservations = getAllReservations;
  * @param {*} limit The number of results to return.
  * @return {Promise<[{}]>}  A promise to the properties.
  */
-const getAllProperties = function(options, limit = 10) {
-  const limitedProperties = {};
-  for (let i = 1; i <= limit; i++) {
-    limitedProperties[i] = properties[i];
-  }
-  return Promise.resolve(limitedProperties);
-}
+const getAllProperties = async function(options, limit = 1) {
+  return client.query(`
+    SELECT * FROM properties LIMIT ${limit};
+  `).then(res => res.rows);
+};
 exports.getAllProperties = getAllProperties;
 
 
@@ -86,5 +88,5 @@ const addProperty = function(property) {
   property.id = propertyId;
   properties[propertyId] = property;
   return Promise.resolve(property);
-}
+};
 exports.addProperty = addProperty;
