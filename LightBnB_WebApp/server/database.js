@@ -1,16 +1,5 @@
-const properties = require('./json/properties.json');
-const users = require('./json/users.json');
-const { Client } = require('pg');
 const {SQL} = require('sql-template-strings');
-
-const client = new Client({
-  user: 'vincent',
-  password: '',
-  host: 'localhost',
-  database: 'lightbnb'
-});
-
-client.connect();
+const { client } = require('./db');
 
 /// Users
 
@@ -90,7 +79,6 @@ const getAllProperties = async function(options, limit = 10) {
   JOIN property_reviews ON properties.id = property_id
   `;
 
-  if (options) queryString += 'WHERE ';
   let filters = [];
   if (options.city) {
     queryParams.push(`%${options.city}%`);
@@ -113,7 +101,9 @@ const getAllProperties = async function(options, limit = 10) {
     filters.push(`owner_id LIKE $${queryParams.length}`);
   }
 
-  queryString.push(filters.join(' AND '));
+  if (filters.length > 0) queryString += 'WHERE ';
+  const filterStr = filters.join(' AND ');
+  queryString += filterStr;
   queryParams.push(limit);
   queryString += `
   GROUP BY properties.id
@@ -122,7 +112,7 @@ const getAllProperties = async function(options, limit = 10) {
   `;
   console.log(queryString, queryParams);
 
-  return pool.query(queryString, queryParams)
+  return client.query(queryString, queryParams)
   .then(res => res.rows);
 };
 exports.getAllProperties = getAllProperties;
